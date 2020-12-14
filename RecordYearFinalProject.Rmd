@@ -1,0 +1,472 @@
+---
+title: "Record of the Year Final Project"
+output: html_notebook
+author: "Kaitlyn Brown"
+date: "12/14/2020"
+---
+
+ 
+### Required packages
+```{r}
+#Load required packages
+library(rvest)
+library(tidyverse)
+library(genius)
+library(dplyr)
+library(DataComputing)
+library(mosaic)
+library(tidyr)
+library(gridExtra)
+library(ggplot2)
+library(tidytext)
+library(stringr)
+```
+
+
+
+### Scrape and create table of records from 1980s
+
+The following four chunks of code is how I read the wiki webpage for grammy awards into R to began scraping my data. Once the web page was read in I copied the xpath for the table pertaining to that specific year (1980s-2010s). Next I created the table using html_nodes and html_table. Moving on it was time to clean up the data in the table. Using mutate I was able to take the [] out of the variable Year, rename my variables to track, artist, and year, and finally omit and lines that contained NA. Once this was complete I attached the lyrics to the table for each year. To do this I used the genius package and the function add_genius to assign the lyrics. 
+```{r}
+# read webpage for Grammy Awards
+webpage <- read_html("https://en.wikipedia.org/wiki/Grammy_Award_for_Record_of_the_Year")
+
+# copy xpath for table of 1980s
+XPATH80 <- '/html/body/div[3]/div[3]/div[5]/div[1]/table[5]' #specify table number acording to where its found on wiki page
+
+# run the following to create table of songs from 1980s
+table_1980 <- 
+  webpage %>%
+  html_nodes(xpath = XPATH80) %>%
+  html_table(fill = TRUE)
+
+d1980 <- table_1980[[1]]
+
+head(d1980)
+
+#Clean up data table
+ROY80s<- d1980 %>%
+  mutate(`Year[I]` = gsub(pattern = "[[^,]|]|.{3}$",  replacement = "", `Year[I]`)) %>% #remove footnotes from Year[I]
+  rename( track = "Record" , artist = "Artist(s)", year = "Year[I]") %>% #rename variables
+  na.omit(d1980)
+
+ROY80s <- ROY80s[-4]
+
+ROY80s
+
+# get lyrics for songs 1980s
+lyrics80s <- ROY80s %>%
+  add_genius(artist, track, type = "lyrics") #add lyrics to track and artist
+head(lyrics80s)
+```
+
+### Scrape and create table of records from 1990s
+```{r}
+# read webpage for Grammy Awards
+webpage <- read_html("https://en.wikipedia.org/wiki/Grammy_Award_for_Record_of_the_Year")
+
+# copy xpath for table of 1990s
+XPATH90 <- '/html/body/div[3]/div[3]/div[5]/div[1]/table[6]' #specify table number according to wiki page
+
+# run the following to create table of songs from 1990s
+table_1990 <- 
+  webpage %>%
+  html_nodes(xpath = XPATH90) %>%
+  html_table(fill = TRUE)
+
+d1990 <- table_1990[[1]]
+head(d1990)
+
+#clean up data table
+ROY90s<- d1990 %>%
+  mutate(`Year[I]` = gsub(pattern = "[[^,]|]|.{3}$",  replacement = "", `Year[I]`)) %>% #remove footnotes from variable Year[I]
+  rename( track = "Record" , artist = "Artist(s)", year = "Year[I]") %>% #rename variables
+  na.omit(d1990)
+
+ROY90s <- ROY90s[-4]
+
+ROY90s
+
+# get lyrics for songs 1990s
+lyrics90s <- ROY90s %>%
+  add_genius(artist, track, type = "lyrics") #add lyrics to track and artist
+head(lyrics90s)
+```
+
+### Scrape and create table of records from 2000s
+```{r}
+# read webpage for Grammy Awards
+webpage <- read_html("https://en.wikipedia.org/wiki/Grammy_Award_for_Record_of_the_Year")
+
+# copy xpath for table of 2000s
+XPATH00 <- '/html/body/div[3]/div[3]/div[5]/div[1]/table[7]' #specify table number according to wiki page
+
+# run the following to create table of songs from 2000s
+table_2000 <- 
+  webpage %>%
+  html_nodes(xpath = XPATH00) %>%
+  html_table(fill = TRUE)
+
+d2000 <- table_2000[[1]]
+head(d2000)
+
+#clean up data table
+ROY00s<- d2000 %>%
+  mutate(`Year[I]` = gsub(pattern = "[[^,]|]|.{3}$",  replacement = "", `Year[I]`)) %>% #remove footnotes from variable Year[I]
+  rename( track = "Record" , artist = "Artist(s)", year = "Year[I]") %>% #rename variables
+  na.omit(d2000)
+
+ROY00s <- ROY00s[-4]
+
+ROY00s
+
+# get lyrics for songs 2000s
+lyrics00s <- ROY00s %>%
+  add_genius(artist, track, type = "lyrics") #add lyrics to track and artist
+head(lyrics00s)
+```
+
+
+### Scrape and create table of records from 2010s
+```{r}
+# read webpage for Grammy Awards
+webpage <- read_html("https://en.wikipedia.org/wiki/Grammy_Award_for_Record_of_the_Year")
+
+# copy xpath for table of 2010s
+XPATH10 <- '/html/body/div[3]/div[3]/div[5]/div[1]/table[8]' #specify table according to wiki page
+
+# run the following to create table of songs from 2010s
+table_2010 <- 
+  webpage %>%
+  html_nodes(xpath = XPATH10) %>%
+  html_table(fill = TRUE)
+
+d2010 <- table_2010[[1]]
+head(d2010)
+
+#clean up data table
+ROY10s<- d2010 %>%
+  mutate(`Year[I]` = gsub(pattern = "[[^,]|]|.{3}$",  replacement = "", `Year[I]`)) %>% #remove footnotes from variable Year[I]
+  rename( track = "Record" , artist = "Artist(s)", year = "Year[I]") %>% #rename variables 
+  na.omit(d2010)
+
+ROY10s <- ROY10s[-4] 
+ROY10s
+
+# get lyrics for songs 2010s
+lyrics10s <- ROY10s %>%
+  add_genius(artist, track, type = "lyrics") #add lyrics to track and artist
+head(lyrics10s)
+```
+
+
+### Combine all four tables
+
+After scraping all four tables for the years 1980-2010s its time to combine all four into one. To do this I used rbind and renamed the data table ROY_ND. the ND stands for no decade. Next, I wanted to group the years together and add a decades column. Using mutate I defined a new variable called decade to specify the 10 years contained within each decade. The floor function returns the largest integer that is smaller than or equal to value passed to it as argument. And finally group_by created the new column in my data set.
+```{r}
+#combined all four tables
+ROY_ND <- rbind(lyrics80s, lyrics90s, lyrics00s, lyrics10s)
+  
+View(ROY_ND)
+
+
+#group by decade
+ROY <- ROY_ND %>% mutate(decade = floor (as.numeric(year)/10)*10) %>% #create variable decade
+      group_by(decade)
+View(ROY)
+
+```
+
+
+### Sum Words per song
+In the first graph we want to create a boxplot that shows the number of words per song contained in each decade. This was a bit tricky, after some research I came up with using mutate to create a new variable 'words' that counted up the number of words in the string 'lyric' for each row. Next I used unnest_tokens to convert a data frame with a text column to be "one token per row", meaning I un-nested the lyric string to be read as individual words. grouping by track and decade I then counted up the words per track. Finally, Summarise allowed me to create the variable wordspersong by summing up the number of words for each track by decade.
+```{r}
+
+#Sum up Words Per Song
+ROY_w <- ROY %>% 
+  mutate(words =  str_count(lyric, '\\s+')+1) %>% #count the number of words in the string
+  unnest_tokens(word, lyric) %>% #separate the individuals words  
+  group_by(track, decade)%>% #group by decade and track
+  count(words, track)%>% #count the words in each track
+  summarise(wordspersong = sum(n)) #sum up the number to create the variable wordspersong
+  
+ROY_w
+```
+
+
+
+### Graph 1:
+
+```{r}
+library(ggplot2)
+
+
+ggplot(ROY_w) +
+ aes(x = factor(decade), y = wordspersong, fill = factor(decade)) +
+ geom_boxplot() +
+ theme(legend.position="none") + #remove the legend
+ scale_fill_brewer(palette = "BrBG") +
+ labs(x = "Decade", y = "Words per Song", title = "Boxplots of Words per Grammy Nominated Songs by Decade", fill = "Decades") +
+  theme_minimal()
+ 
+
+```
+Looking at the Boxplots of Words per Grammy Nominated Songs by Decade, it appears the 2010s had on average the most words per song, with the 2000s as a close second. The 1990s had on average the least amount of words per song compared to the other decades. 
+
+
+
+
+
+### Filter out stopwords 
+Songs contain many filler or stop words such as 'and' or 'the' these are not words I am interested in keeping in the data, as they do not provide much meaningful information. To filter out these stop words I loaded the library tidytext and the data set stop_words. using unnest_tokens again, allowing R to recognize each individual word. Anti_join to remove the stop words from the data table. Since the data frame stop_words only contains R's default words, I removed eleven additional stop words using filter.
+```{r}
+data("stop_words")
+
+#un nest lyrics into individual words from data table without decade variable
+verse_words <- ROY_ND %>%
+  unnest_tokens(word, lyric) #separate the individual words from the lyric strings
+
+#remove stop words
+ft <- verse_words %>%
+  anti_join(stop_words) #remove stop words from the table
+
+
+#remove additional stopwords
+ROY_2 <- ft %>%
+  count(word, sort = TRUE) %>% #count the number of words that are true
+  filter(n >= 3) %>% #and appear at least three times
+  filter(word !=  'ba') %>% #Review topten and filter words missedby stop_words
+  filter(word !=  'du') %>%
+  filter(word !=  'yeah') %>%
+  filter(word !=  'da') %>%
+  filter(word !=  'ya') %>%
+  filter(word !=  'ooh') %>%
+  filter(word !=  'gonna') %>%
+  filter(word !=  'na') %>%
+  filter(word !=  'uh') %>%
+  filter(word !=  'hol')%>%
+  top_n(10)
+
+
+ROY_2
+
+```
+
+
+### Graph 2
+```{r}
+
+ggplot(ROY_2) +
+ aes(x = reorder(word, desc(n)), weight = n) +
+ geom_bar(fill = "#bd3786") +
+ labs(x = "Word", y = "Count", title = "Ten Most Popular Words of Grammy Nominated Songs from 1980-2019") +
+ theme_minimal()
+
+```
+Looking at the Ten Most Popular Words of Grammy Nominated Songs from 1980-2019, we see that "love" was the most popular word used 510 times in songs over the four decades. "World" was 10th most popular word used 103 times in songs over the four decades.Love certainly trumps the 8 remaining popular words on the graph as they average being used about 151 times in songs over the four decades.
+
+
+### Graph 3
+```{r}
+
+data("stop_words")
+
+
+#un nest lyrics into individual words from data table with decade variable
+verse_words <- ROY %>%
+  unnest_tokens(word, lyric) #separate the individual words from the lyric string
+
+
+##remove stop words
+ft <- verse_words %>%
+  anti_join(stop_words) #remove stopwords from the table
+
+#remove additional stopwords and group by decade
+ROY_3 <- ft %>% 
+  group_by(decade) %>% #important to group by decade here
+  count(word, sort = TRUE) %>% #count number of times word is true
+  filter(n >= 3) %>% #and appears at least three times
+  filter(word !=  'ba') %>% #Review topten and filter words missedby stop_words
+  filter(word !=  'du') %>%
+  filter(word !=  'yeah') %>%
+  filter(word !=  'da') %>%
+  filter(word !=  'ya') %>%
+  filter(word !=  'ooh') %>%
+  filter(word !=  'gonna') %>%
+  filter(word !=  'na') %>%
+  filter(word !=  'uh') %>%
+  filter(word !=  'hol')%>%
+  top_n(10)
+
+ROY_3
+
+#Create a graph of top ten words for the 1980s
+p1 <- ROY_3 %>%
+ filter(decade >= 1980L & decade <= 1989L) %>% #filter through the years. I struggled with this for a bit, but figured out by using a facet wrap by decade in esquisser and adjusting the slider to only capture the 10 years within this decade, then removing the facet wrap line from this code
+ ggplot() +
+ aes(x = reorder(word, desc(n)), weight = n) +
+ geom_bar(fill = "#1f9e89") +
+ labs(x = "Word", y = "Count", title = "1980s") +
+ theme_minimal() + theme(axis.text.x = element_text(angle = 30, hjust=1))
+
+#Create a graph of top ten words for the 1990s
+p2 <- ROY_3 %>%
+ filter(decade >= 1990L & decade <= 1999L) %>%
+ ggplot() +
+ aes(x = reorder(word, desc(n)), weight = n) +
+ geom_bar(fill = "#9ecae1") +
+ labs(x = "Word", y = "Count", title = "1990s") +
+ theme_minimal() + theme(axis.text.x = element_text(angle = 30, hjust=1))
+ 
+#Create a graph of top ten words for the 2000s
+p3 <- ROY_3 %>%
+ filter(decade >= 2000L & decade <= 2009L) %>%  
+ ggplot() +
+ aes(x = reorder(word, desc(n)), weight = n) +
+ geom_bar(fill = "#9c179e") +
+ labs(x = "Word", y = "Count", title = "2000s") +
+ theme_minimal() + theme(axis.text.x = element_text(angle = 30, hjust=1))
+
+#Create a graph of top ten words for the 2000
+p4 <- ROY_3 %>%
+ filter(decade >= 2010L & decade <= 2019L) %>%
+ ggplot() +
+ aes(x = reorder(word, desc(n)), weight = n) +
+ geom_bar(fill = "#fc9272") +
+ labs(x = "Word", y = "Count", title = "2010s") +
+ theme_minimal() + theme(axis.text.x = element_text(angle = 30, hjust=1))
+
+
+#Combine all four decade graphs 
+grid.arrange(p1, p2, p3, p4, nrow = 2, top = "Top Ten Words by Decade")
+
+```
+Looking at the Top Ten Words by Decade, we can see across all four decades that love stands as the most popular word used in songs. Compared to all four decades love is used the most  in the 1980s at a count of about 150, and the least in the 1990s at a count of around 80. Aside from love, baby also seems to be quite popular among all four decades. The 2000s and 2010s the most popular words contain some vulgarity that does not appear in the other two decades. It is interesting to see meaningful and happy words like "life", "heart", "day", "world" "bop" be replaced by less meaningful and harsh words like "hey" "shit" "shake" "slay" and "bitch". This is something we will further explore in the following graphs with sentiment scores.
+
+
+### Graph 4
+```{r}
+
+
+#filter out additional stop words and group by year and decade
+ROY_4 <- ft %>% 
+  group_by(year, decade) %>% #important to group by year AND decade here
+  count(word, sort = TRUE) %>%
+  filter(n >= 3) %>%
+  filter(word !=  'ba') %>% #Review topten and filter words missedby stop_words
+  filter(word !=  'du') %>%
+  filter(word !=  'yeah') %>%
+  filter(word !=  'da') %>%
+  filter(word !=  'ya') %>%
+  filter(word !=  'ooh') %>%
+  filter(word !=  'gonna') %>%
+  filter(word !=  'na') %>%
+  filter(word !=  'uh') %>%
+  filter(word !=  'hol')%>%
+  top_n(10)
+
+ROY_4
+
+
+#assign sentiment value
+Sentiments <- ROY_4 %>%
+  inner_join(get_sentiments("bing")) %>% #categorize words in a binary fashion into positive and negative categories
+  count(word, sentiment, sort = TRUE)%>% #count the number of times word is true (or positive)
+  mutate(n = ifelse(sentiment == 'negative', 0, 1)) #create a binary variable for sentiment by assigning 1's and 0's
+Sentiments
+
+#join the ROY table and Sentiments table 
+ROY_S <- 
+  Sentiments %>%
+  select(sentiment, n) %>% #select the variables sentiment and n from sentiments table
+  left_join(ROY_4 %>% select(year, word), #join with year and word in the ROY_4 table
+            by = c("decade" = "decade", "year" = "year")) #define decade and year as the same variables in both tables
+ROY_S
+
+#Sum up the sentiment score and create new variable NetSentimentScore
+ROY_Sum <- ROY_S %>% 
+  group_by(sentiment, decade, year)%>% #group by sentiment year and decade
+  count(word, sentiment)%>% #count up the positive and negative words in sentiment
+  summarise(NetSentimentScore = sum(n)) #sum up the n column for each year based on sentiment value defined in the last line
+
+ROY_Sum
+
+```
+
+```{r}
+#Create graph to illustrate the Net Sentiment Score by Year
+ggplot(ROY_Sum) +
+ aes(x = year, fill = decade, weight = NetSentimentScore) +
+ geom_bar() +
+ scale_fill_viridis_c(option = "plasma") +
+ labs(x = "Year", y = "Net Sentiment", title = "Net Sentiment Score by Year") +
+ theme_minimal() +
+ theme(axis.text.x = element_text(angle = 60, hjust=1))
+
+```
+Looking at the Net Sentiment Score by Year, we can see there is a lot of fluctuation. There is a significant spike in the net sentiment score for the year 1992 and a very low net sentiment score in the year 2005. I wanted to dive further into this so I took a look at my table ROY_4 which shows the most popular words for that year. 1992 showed up in the table 18 times with its top words being "baby" at a count of 18 and "love" at a count of 11, both of which have a positive connotation and be attributed to a 1 for a sentiment value. 2005 only appeared in the table 10 times with its top words being "started" at a count of 35 and "runnin" at a count of 31, which would most likely have a negative connotation and be attributed a 0 for a sentiment value. Overall the 1990s decade has the lowest net sentiment score, never reaching above 30. The 2010s sentiment score appears the most consistent over the years, staying on average between 25 and 50. While the scores in the years of the 2000s varies greatly with scores ranging from 10 in 2000 and 2005 and a score of around 60 in 2004 and 2007.
+
+
+
+### Graph 5
+```{r}
+#Create a mean sentiment score
+ROY_5 <- ROY_Sum %>%
+group_by(sentiment, year, decade) %>% #grouping by sentiment year and decade
+  summarise( MeanSentimentScore=mean(NetSentimentScore) ) #take the average of the net sentiment score
+ROY_5
+
+
+#create graph to illustrate mean sentiment score
+ggplot(ROY_5) +
+ aes(x = factor(decade), fill = factor(decade), weight = MeanSentimentScore) +
+ geom_bar() +
+ scale_fill_viridis_d(option = "viridis") +
+ labs(x = "Year", y = "Mean Sentiment Score", title = "Mean Sentiment Score by Decade") +
+ theme_minimal() +
+ theme(legend.position="none") #remove the legend
+
+
+```
+
+
+### An extra graph to go along with my analysis of graph 5
+```{r}
+# an extra graph separating positive and negative words by facet wrap because I was curious
+
+ROY_Sum2 <- ROY_S %>% 
+  group_by(sentiment, decade)%>%
+  count(word, sentiment)%>%
+  summarise(NetSentimentScore = sum(n))
+
+
+
+ggplot(ROY_Sum2) +
+ aes(x = decade, weight = NetSentimentScore) +
+ geom_bar(fill = "#006d2c") +
+ labs(x = "Decade", y = "Mean Sentiment Score", title = "Positive vs Negative Mean Sentiment Score by Decade") +
+ theme_minimal() +
+ facet_wrap(vars(sentiment))
+```
+
+Looking at the Mean Sentiment Score by Decade we can see that the 1980s had the lowest score and the 1990s had the highest. I did some further analysis with the second graph Positive vs Negative Mean Sentiment Score by Decade. The decade with the highest negative mean sentiment score was 2000s and the decade with the highest positive mean sentiment score was the 1990s. This translates to songs in the 2000s on average containing more words with negative connotations, compared to the 1990s which on average contained more words with positive connotations.This agrees with what I found in the Top Ten Words per Decade graph where the popular words seemed less upbeat and more harsh in the 2000s and 2010s.
+
+
+### Graph 6
+
+```{r}
+#Create a graph to illustrate the Net Sentiment Score by Year with a linear model
+ggplot(ROY_Sum) +
+ aes(x = as.numeric(year), y = NetSentimentScore, fill = decade, colour = decade) +
+ geom_point(size = 2.26) +
+ ylim(0, 100) + geom_smooth(method = "lm", col = "blue", se = F)+
+ scale_fill_distiller(palette = "Set3") +
+ scale_color_distiller(palette = "Set3") +
+ labs(x = "Year", y = "Net Sentiment", title = "Net Sentiment Score by Year of Grammy Nominated Records from 1980-2019 with Linear Model Fit") +
+ theme_minimal()
+```
+
+Looking at the Net Sentiment Score by Year of Grammy Nominated Records from 1980-2019 with a linear model, it appears to be fairly steady across the decades at a Net Sentiment score averaging around 20-25. Certainly we can observe that there are more points well above the blue line for the years 2000-2020 that reaches up into a Net Sentiment score in the 70s. There are some significant outliers in the two decades perhaps due to the increase in popularity of vulgar words we observed in the Top Ten words graphics.
+
+
+### [here's the link to my presentation](https://psu.zoom.us/rec/share/I6FBlSj1SPYKtWUFVvD1cvTRdJCesDZDprgMrdRX9tyhY78Y_boSOZ61luX6tZUb.OI60XuJ43oYr4EwP?startTime=1607974322000)!
